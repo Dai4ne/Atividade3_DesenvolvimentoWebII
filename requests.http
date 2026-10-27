@@ -1,0 +1,497 @@
+# Requisições de teste da API (extensão "REST Client" do VS Code, ou importe no Postman/Insomnia).
+# Parte do banco recém-criado com sql/db_vendas.sql (npm run db:init). O primeiro vendedor
+# cadastrado aqui recebe o id 7; as vendas usam códigos explícitos (101, 102...).
+# Execute na ordem para que os resultados batam com os comentários.
+
+
+### 0 - Checar se o servidor está rodando
+GET http://localhost:3000/
+
+
+# VENDEDORES
+
+### 1 - Cadastrar vendedor (recebe id 7)
+POST http://localhost:3000/vendedores
+Content-Type: application/json
+
+{
+  "nome": "Gabriela Nunes",
+  "meta_mensal": 18000,
+  "percentual_base": 5
+}
+
+
+### 1b - Tentar cadastrar sem nome (deve dar 400)
+POST http://localhost:3000/vendedores
+Content-Type: application/json
+
+{
+  "meta_mensal": 18000,
+  "percentual_base": 5
+}
+
+
+### 1c - Tentar cadastrar com meta negativa (deve dar 400)
+POST http://localhost:3000/vendedores
+Content-Type: application/json
+
+{
+  "nome": "Teste Invalido",
+  "meta_mensal": -100,
+  "percentual_base": 5
+}
+
+
+### 1d - Tentar cadastrar com percentual acima de 100 (deve dar 400)
+POST http://localhost:3000/vendedores
+Content-Type: application/json
+
+{
+  "nome": "Teste Invalido",
+  "meta_mensal": 1000,
+  "percentual_base": 150
+}
+
+
+### 2 - Listar todos os vendedores
+GET http://localhost:3000/vendedores
+
+
+### 2b - Listar apenas vendedores ativos
+GET http://localhost:3000/vendedores?ativo=true
+
+
+### 2c - Listar apenas vendedores inativos
+GET http://localhost:3000/vendedores?ativo=false
+
+
+### 3 - Buscar um vendedor específico
+GET http://localhost:3000/vendedores/1
+
+
+### 3b - Buscar vendedor inexistente (deve dar 404)
+GET http://localhost:3000/vendedores/999
+
+
+### 4 - Atualizar meta mensal
+PUT http://localhost:3000/vendedores/7
+Content-Type: application/json
+
+{
+  "meta_mensal": 22000
+}
+
+
+### 4b - Atualizar meta mensal e percentual base juntos
+PUT http://localhost:3000/vendedores/7
+Content-Type: application/json
+
+{
+  "meta_mensal": 22000,
+  "percentual_base": 5
+}
+
+
+### 4c - Atualizar sem informar nenhum campo (deve dar 400)
+PUT http://localhost:3000/vendedores/7
+Content-Type: application/json
+
+{}
+
+
+### 4d - Atualizar vendedor inexistente (deve dar 404)
+PUT http://localhost:3000/vendedores/999
+Content-Type: application/json
+
+{
+  "meta_mensal": 5000
+}
+
+
+
+# REGIÕES
+
+### 5 - Listar regiões
+GET http://localhost:3000/regioes
+
+
+### 5b - Buscar região específica
+GET http://localhost:3000/regioes/4
+
+
+### 5c - Buscar região inexistente (deve dar 404)
+GET http://localhost:3000/regioes/99
+
+
+### 5d - Cadastrar região que já existe (deve dar 400)
+POST http://localhost:3000/regioes
+Content-Type: application/json
+
+{
+  "nome_regiao": "Norte",
+  "percentual_bonus": 1
+}
+
+
+### 5e - Cadastrar região com nome fora das quatro permitidas (deve dar 400)
+POST http://localhost:3000/regioes
+Content-Type: application/json
+
+{
+  "nome_regiao": "Centro-Oeste",
+  "percentual_bonus": 1
+}
+
+
+### 5f - Atualizar bônus de uma região (mantém o valor original da Sul)
+PUT http://localhost:3000/regioes/4
+Content-Type: application/json
+
+{
+  "percentual_bonus": 0.5
+}
+
+
+### 5g - Tentar excluir região que possui vendas (deve dar 400)
+DELETE http://localhost:3000/regioes/1
+
+
+# VENDAS
+
+### 6 - Registrar venda PJ / Norte (base 5% + 3% + 1% = 9% -> comissão 180.00)
+POST http://localhost:3000/vendas
+Content-Type: application/json
+
+{
+  "id_venda": 101,
+  "id_vendedor": 7,
+  "id_regiao": 1,
+  "data_venda": "2026-10-23 10:00:00",
+  "valor_venda": 2000,
+  "tipo_cliente": "PJ"
+}
+
+
+### 6b - Registrar venda PF / Sudeste (5% + 2% + 0% = 7% -> comissão 70.00)
+POST http://localhost:3000/vendas
+Content-Type: application/json
+
+{
+  "id_venda": 102,
+  "id_vendedor": 7,
+  "id_regiao": 3,
+  "data_venda": "2026-10-23 11:30:00",
+  "valor_venda": 1000,
+  "tipo_cliente": "PF"
+}
+
+
+### 6c - Registrar venda PF / Nordeste (5% + 2% + 1% = 8% -> comissão 120.00)
+POST http://localhost:3000/vendas
+Content-Type: application/json
+
+{
+  "id_venda": 103,
+  "id_vendedor": 7,
+  "id_regiao": 2,
+  "data_venda": "2026-10-24 09:15:00",
+  "valor_venda": 1500,
+  "tipo_cliente": "PF"
+}
+
+
+### 6d - Registrar venda PJ / Sul (5% + 3% + 0,5% = 8,5% -> comissão 255.00)
+POST http://localhost:3000/vendas
+Content-Type: application/json
+
+{
+  "id_venda": 104,
+  "id_vendedor": 7,
+  "id_regiao": 4,
+  "data_venda": "2026-10-25 14:00:00",
+  "valor_venda": 3000,
+  "tipo_cliente": "PJ"
+}
+
+
+### 6e - Registrar venda sem informar o código (o banco gera o próximo)
+POST http://localhost:3000/vendas
+Content-Type: application/json
+
+{
+  "id_vendedor": 1,
+  "id_regiao": 3,
+  "valor_venda": 500.75,
+  "tipo_cliente": "PF"
+}
+
+
+### 6f - Tentar registrar com código de venda repetido (deve dar 400)
+POST http://localhost:3000/vendas
+Content-Type: application/json
+
+{
+  "id_venda": 101,
+  "id_vendedor": 7,
+  "id_regiao": 1,
+  "valor_venda": 100,
+  "tipo_cliente": "PJ"
+}
+
+
+### 6g - Tentar registrar para vendedor inexistente (deve dar 400)
+POST http://localhost:3000/vendas
+Content-Type: application/json
+
+{
+  "id_venda": 105,
+  "id_vendedor": 999,
+  "id_regiao": 1,
+  "valor_venda": 100,
+  "tipo_cliente": "PJ"
+}
+
+
+### 6h - Tentar registrar para vendedor inativo (vendedor 6 é inativo; deve dar 400)
+POST http://localhost:3000/vendas
+Content-Type: application/json
+
+{
+  "id_venda": 105,
+  "id_vendedor": 6,
+  "id_regiao": 1,
+  "valor_venda": 100,
+  "tipo_cliente": "PJ"
+}
+
+
+### 6i - Tentar registrar com região inexistente (deve dar 400)
+POST http://localhost:3000/vendas
+Content-Type: application/json
+
+{
+  "id_venda": 105,
+  "id_vendedor": 7,
+  "id_regiao": 99,
+  "valor_venda": 100,
+  "tipo_cliente": "PJ"
+}
+
+
+### 6j - Tentar registrar com valor negativo (deve dar 400)
+POST http://localhost:3000/vendas
+Content-Type: application/json
+
+{
+  "id_venda": 105,
+  "id_vendedor": 7,
+  "id_regiao": 1,
+  "valor_venda": -50,
+  "tipo_cliente": "PJ"
+}
+
+
+### 6k - Tentar registrar com valor zero (deve dar 400)
+POST http://localhost:3000/vendas
+Content-Type: application/json
+
+{
+  "id_venda": 105,
+  "id_vendedor": 7,
+  "id_regiao": 1,
+  "valor_venda": 0,
+  "tipo_cliente": "PJ"
+}
+
+
+### 6l - Tentar registrar com tipo de cliente inválido (deve dar 400)
+POST http://localhost:3000/vendas
+Content-Type: application/json
+
+{
+  "id_venda": 105,
+  "id_vendedor": 7,
+  "id_regiao": 1,
+  "valor_venda": 100,
+  "tipo_cliente": "XX"
+}
+
+
+### 6m - Tentar registrar com data inválida (deve dar 400)
+POST http://localhost:3000/vendas
+Content-Type: application/json
+
+{
+  "id_venda": 105,
+  "id_vendedor": 7,
+  "id_regiao": 1,
+  "data_venda": "2026-02-30",
+  "valor_venda": 100,
+  "tipo_cliente": "PJ"
+}
+
+
+### 7 - Listar todas as vendas
+GET http://localhost:3000/vendas
+
+
+### 7b - Listar vendas de um período
+GET http://localhost:3000/vendas?inicio=2026-10-01&fim=2026-10-10
+
+
+### 8 - Buscar uma venda específica
+GET http://localhost:3000/vendas/101
+
+
+### 8b - Buscar venda inexistente (deve dar 404)
+GET http://localhost:3000/vendas/99999
+
+
+### 9 - Consultar vendas de um vendedor (com totais)
+GET http://localhost:3000/vendas/vendedor/7
+
+
+### 9b - Consultar vendas de um vendedor em um período
+GET http://localhost:3000/vendas/vendedor/1?inicio=2026-10-01&fim=2026-10-31
+
+
+### 9c - Consultar vendas de vendedor inexistente (deve dar 404)
+GET http://localhost:3000/vendas/vendedor/999
+
+
+### 10 - Consultar vendas de uma região (com totais)
+GET http://localhost:3000/vendas/regiao/1
+
+
+### 10b - Consultar vendas de região inexistente (deve dar 404)
+GET http://localhost:3000/vendas/regiao/99
+
+
+### 11 - Atualizar uma venda (recalcula a comissão: 5% + 2% + 0% sobre 1200 = 84.00)
+PUT http://localhost:3000/vendas/102
+Content-Type: application/json
+
+{
+  "valor_venda": 1200
+}
+
+
+### 11b - Tentar transferir a venda para vendedor inativo (deve dar 400)
+PUT http://localhost:3000/vendas/102
+Content-Type: application/json
+
+{
+  "id_vendedor": 6
+}
+
+
+### 11c - Atualizar venda inexistente (deve dar 404)
+PUT http://localhost:3000/vendas/99999
+Content-Type: application/json
+
+{
+  "valor_venda": 100
+}
+
+
+### 12 - Excluir uma venda
+DELETE http://localhost:3000/vendas/103
+
+
+### 12b - Excluir a mesma venda de novo (deve dar 404)
+DELETE http://localhost:3000/vendas/103
+
+
+
+# CICLO DE VIDA DO VENDEDOR
+
+### 13 - Desativar vendedor (histórico de vendas é preservado)
+PATCH http://localhost:3000/vendedores/7/desativar
+
+
+### 13b - Desativar de novo (deve dar 400)
+PATCH http://localhost:3000/vendedores/7/desativar
+
+
+### 13c - Tentar registrar venda para o vendedor recém-desativado (deve dar 400)
+POST http://localhost:3000/vendas
+Content-Type: application/json
+
+{
+  "id_venda": 106,
+  "id_vendedor": 7,
+  "id_regiao": 1,
+  "valor_venda": 100,
+  "tipo_cliente": "PF"
+}
+
+
+### 13d - O histórico do vendedor desativado continua consultável
+GET http://localhost:3000/vendas/vendedor/7
+
+
+### 13e - Reativar vendedor
+PATCH http://localhost:3000/vendedores/7/ativar
+
+
+### 13f - Tentar excluir vendedor que possui vendas (deve dar 400)
+DELETE http://localhost:3000/vendedores/7
+
+
+### 13g - Cadastrar vendedor descartável (recebe id 8)
+POST http://localhost:3000/vendedores
+Content-Type: application/json
+
+{
+  "nome": "Vendedor Descartavel",
+  "meta_mensal": 1000,
+  "percentual_base": 3
+}
+
+
+### 13h - Excluir vendedor sem vendas
+DELETE http://localhost:3000/vendedores/8
+
+
+# RELATÓRIOS
+
+### 14 - Relatório de performance de outubro/2026 (metas avaliadas em 2026-10)
+GET http://localhost:3000/relatorios/performance?inicio=2026-10-01&fim=2026-10-31
+
+
+### 14b - Relatório de uma semana (meta ainda avaliada no mês de referência)
+GET http://localhost:3000/relatorios/performance?inicio=2026-10-01&fim=2026-10-07
+
+
+### 14c - Relatório de setembro/2026
+GET http://localhost:3000/relatorios/performance?inicio=2026-09-01&fim=2026-09-30
+
+
+### 14d - Relatório de período sem vendas (valores zerados)
+GET http://localhost:3000/relatorios/performance?inicio=2020-01-01&fim=2020-01-31
+
+
+### 14e - Relatório sem informar as datas (deve dar 400)
+GET http://localhost:3000/relatorios/performance
+
+
+### 14f - Relatório com data inválida (deve dar 400)
+GET http://localhost:3000/relatorios/performance?inicio=01/10/2026&fim=2026-10-31
+
+
+### 14g - Relatório com início maior que o fim (deve dar 400)
+GET http://localhost:3000/relatorios/performance?inicio=2026-10-31&fim=2026-10-01
+
+
+
+# ERROS GERAIS
+
+### 15 - Rota inexistente (deve dar 404)
+GET http://localhost:3000/rota-que-nao-existe
+
+
+### 15b - JSON malformado (deve dar 400)
+POST http://localhost:3000/vendedores
+Content-Type: application/json
+
+{ "nome": "quebrado",
